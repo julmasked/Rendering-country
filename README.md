@@ -1,4 +1,4 @@
-### Simple Country Info App
+# Simple Country Info App
 A simple web app that fetches and displays information about a country and its neighbor using the REST Countries API.
 
 # Usage

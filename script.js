@@ -5,10 +5,15 @@ const countriesContainer = document.querySelector('.countries');
 
 ///////////////////////////////////////
 /// old waY for AJAX CALL
-const ajxRequest = new XMLHttpRequest();
+/* const ajxRequest = new XMLHttpRequest();
 ajxRequest.open('GET', 'https://restcountries.com/v3.1/name/TOGO');
-ajxRequest.send();
+ajxRequest.send();*/
 
+// Error handling function
+const renderError = function (msg) {
+  countriesContainer.insertAdjacentText('beforeend', msg);
+  //countriesContainer.style.opacity = 1;
+};
 
 const renderCountry = function (data, className = '') {
   const html = `
@@ -29,10 +34,10 @@ const renderCountry = function (data, className = '') {
           </div>
         </article>`;
   countriesContainer.insertAdjacentHTML('beforeend', html);
-  countriesContainer.style.opacity = 1;
-}
+  //countriesContainer.style.opacity = 1;
+} 
 
-const getCoutryDataAndNeighbor = function (country) {
+/* const getCoutryDataAndNeighbour = function (country) {
 
   // Ajax call country 1
   const ajxRequest = new XMLHttpRequest();
@@ -66,69 +71,54 @@ const getCoutryDataAndNeighbor = function (country) {
   });
 };
 
-getCoutryDataAndNeighbor('togo');
+getCoutryDataAndNeighbour('togo'); */
 
-   
+/////////////////////////getCountryData function simplified with fetch////////////////////////
 
-// const getCoutryData = function (country) {
-//   getJson(`https://restcountries.com/v3.1/name//${country}`, 'Country not found')
-//  // called json to read the response coming from the fetch
-    
-//     .then(data => {
-//       renderCountry(data[0]);
-//       const neighbor = data[0].borders[0];
-//       console.log(data);
-      
-//       if (!neighbor) throw new Error('No neighbour found.');
+/* const getCountryData = function (country) {
+  fetch(`https://restcountries.com/v3.1/name/${country}`)
+    .then(response =>  response.json() )
+    .then(data => renderCountry(data[0]) );
+  // fetch will return a  promise that need to be consum, ,then(callback that needs to execute as soon as the promise is fufilled)
+};
 
-//       // country 2
-//       return getJson(`https://restcountries.com/v3.1/alpha//${neighbor}`, 'Country not found' )
-//     })
-//     .then(data => renderCountry(data, 'neighbor'))
-//     .catch(err => {
-//       console.error(`${err} 💥💥💥`)
-//       rederError(`Something went wrong 💥💥💥 ${err.message}. Try again!`)
-//     })
-//     .finally(() => {
-//       countriesContainer.style.opacity = 1;
-//     })
-// };
+getCountryData('togo'); */
 
 
-// //put the whole function into a click button
-// btn.addEventListener('click', function () {
-//   getCoutryDataAndNeighbor('neighbor');
-// })
-
-// getCoutryData('australia')
+/////// New way of writing AJAX //////
 
 
+/////////////////// this function is udertaking the fetch and the error handling for the following fetch 
 
+   /*  .then(response => {
+      if (!response.ok) // if the response.ok is false, we throw an error
+        throw new Error(`Country not found (${response.status})`);
 
-/////// New way of writing AJAX 
-
+      return response.json(); */
+//////////////////////////////
 /* const getCoutryData = function (country) {
-  fetch(`https://restcountries.com/v3.1/name//${country}`) // fetch will return a  promise that need to be consum, ,then(callback that needs to execute as soon as the promise is fufilled) 
+  fetch(`https://restcountries.com/v3.1/name//${country}`) // fetch will return a  promise that need to be consum, ,then(callback for the neighbour contry that needs to execute as soon as the promise is fufilled)  and always remenber that a then method always return a promise.
     .then(response => {
-      // 
-
-
-      if (!response.ok)
+      if (!response.ok) // if the response.ok is false, we throw an error
         throw new Error(`Country not found (${response.status})`);
 
       return response.json();
     })  // called json to read the response coming from the fetch
     .then(data => {
       renderCountry(data[0]);
-      const neighbor = data[0].borders[0];
-      if (!neighbor) return;
+      const neighbour = data[0].borders[0];
+      if (!neighbour) return;
 
       // country 2
-      return fetch(`https://restcountries.com/v3.1/name//${neighbor}`)
+      return fetch(`https://restcountries.com/v3.1/name//${neighbour}`)
     })
-    .then(response => response.json())
-    .then(data => renderCountry(data, 'neighbor'))
-    .catch(err => {
+    .then(response => {
+      if (!response.ok)
+        throw new Error(`Country not found (${response.status})`);
+      return response.json();
+    })
+    .then(data => renderCountry(data, 'neighbour'))
+    .catch(err => { /// catch method is used to handle the error  no matter where it is coming from
       console.error(`${err} 💥💥💥`)
       rederError(`Something went wrong 💥💥💥 ${err.message}. Try again!`)
     })
@@ -136,15 +126,51 @@ getCoutryDataAndNeighbor('togo');
       countriesContainer.style.opacity = 1;
   })
 };
+
 //put the whole function into a click button
 btn.addEventListener('click', function(){
-  getCoutryData('togo');
+  getCoutryData('namibia');
 }) */
 
-/* handling Error created manually(wrong country name)
-getCoutryData('france')
+const getJSON = async function (url, errorMsg = 'Something went wrong') {
+  const response = await fetch(url);
+  if (!response.ok) throw new Error(`${errorMsg} (${response.status})`);
+  return await response.json();
+};
 
-hANDLING THE FAILED CALL 
-Error 1: country not found
-Error 2: neighbor country does not exist 
-first methode : callback fction that return alert when promise not fufilled see line 76 second fnction  */
+const getCoutryData = function (country) {
+  // Country 1
+
+  getJSON(`https://restcountries.com/v3.1/name//${country}`, 'Country not found')
+  
+    .then(data => {
+      renderCountry(data[0]);
+      const neighbour = data[0].borders[0];
+
+      if (!neighbour) throw new Error('No neighbour found!');
+      
+      // country 2
+      return getJSON(
+        `https://restcountries.com/v3.1/alpha/${neighbour}`,
+        'Country not found');
+    })
+
+    .then(data => {
+      renderCountry(data, 'neighbour');
+  
+    })
+
+    .catch(err => {
+      console.error(`${err} 💥💥💥`);
+      renderError(`Something went wrong 💥💥💥 ${err.message}. Try again!`); 
+    })
+    .finally(() => {
+      countriesContainer.style.opacity = 1;
+    });
+  
+};
+
+//put the whole function into a click button
+btn.addEventListener('click', function () {
+  getCoutryData('andorra');
+});
